@@ -1,12 +1,11 @@
 import random
-import sys
-sys.setrecursionlimit(20000)
 
-numGames = 7500
+num_games = 10000
+cur_game_num = 0
 
-theBoard = {'1': ' ', '2': ' ', '3': ' ',
-            '4': ' ', '5': ' ', '6': ' ',
-            '7': ' ', '8': ' ', '9': ' '}
+the_board = {'1': ' ', '2': ' ', '3': ' ',
+             '4': ' ', '5': ' ', '6': ' ',
+             '7': ' ', '8': ' ', '9': ' '}
 solutions = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9],
              [1, 5, 9], [3, 5, 7]]  # Chars of the same that fill these win
 scoreboard = {}
@@ -48,7 +47,7 @@ AI1_full_weighting = {'0': {'1': 0, '2': 0, '3': 0,
 
 
 # This function creates the game board
-def printBoard(board):
+def print_board(board):
     print(board['1'] + '|' + board['2'] + '|' + board['3'])
     print('-+-+-')
     print(board['4'] + '|' + board['5'] + '|' + board['6'])
@@ -58,83 +57,40 @@ def printBoard(board):
 
 # This function resets the dictionary holding the game board
 def setup():
-    for key in sorted(theBoard.keys()):
-        theBoard[key] = ' '
+    for key in sorted(the_board.keys()):
+        the_board[key] = ' '
     for key in sorted(AI1_placement_temp.keys()):
         AI1_placement_temp[key] = ''
 
 
-# Displays winner, +1 to score, if not AI ask user for another game
-# If it is AI vs. Computer, continues the tournament unti numGames is reached
-def winner(cur_player, player1, player2, game_mode, switch_player, gameNo):
-    gameNo = gameNo
-    gameNo += 1
+# Handles the end of the game
+#  +1 to score, if there is a winner
+#  If not an AI game ask user for another game
+# If it is AI vs. Computer, continues the tournament unti num_games is reached
+def game_over(cur_player, player1, player2, game_mode,
+              switch_player, cur_game_num, winner):
+    cur_game_num += 1
     switch_player = not switch_player
-    if game_mode == 0 and gameNo < numGames:  # Restarts AI if < numGames
+    if winner:  # If game wasn't a tie, +1 to winner's score
         scoreboard[cur_player] += 1
-        AI_players(player1, player2, switch_player, gameNo)
-    elif game_mode == 0:
-        print("Game over!")
-        scoreboard[cur_player] += 1
-        print("Current score:")
-        for k, v in scoreboard.items():
-            print(k, ':', v)
-        print("--------------------------------------------------------------")
-        print(AI1_full_weighting)
-        print("-----------------------------------")
-    if game_mode == 1 or game_mode == 2:  # Asks the user to play again
+    elif game_mode == 1 or game_mode == 2:  # Asks the user to play again
         print("Game over! The winner is " + cur_player + "!")
-        scoreboard[cur_player] += 1
         print("Current score:")
         for k, v in scoreboard.items():
             print(k, ':', v)
         print("Play again? Y/N?")
         if input().upper() == "Y":
             if game_mode == 1:  # Checks if restarting a 1 or 2 player game
-                single_player(player1, player2, switch_player, gameNo)
+                single_player(player1, player2, switch_player, cur_game_num)
             elif game_mode == 2:
-                two_player(player1, player2, switch_player, gameNo)
+                two_player(player1, player2, switch_player, cur_game_num)
         else:
             exit()
-    else:
-        exit()
-
-
-# Determines what happens when a game is tied.
-# If over numGames, the tournament is ended
-def tie_game(cur_player, player1, player2, game_mode, switch_player, gameNo):
-    gameNo = gameNo
-    gameNo += 1
-    switch_player = not switch_player
-    if game_mode == 0 and gameNo < numGames:  # Restarts AI game if < numGames
-        AI_players(player1, player2, switch_player, gameNo)
-    elif game_mode == 0:
-        print("Game Over!")
-        print("Current score:")
-        for k, v in scoreboard.items():
-            print(k, ':', v)
-        print("--------------------------------------------------------------")
-        print(AI1_full_weighting)
-        print("-----------------------------------")
-    if game_mode == 1 or game_mode == 2:  # Asks the user to play again
-        print("It's a tie!")
-        print("Current score:")
-        for k, v in scoreboard.items():
-            print(k, ':', v)
-        print("Play again? Y/N?")
-        if input().upper() == "Y":
-            if game_mode == 1:  # Check if 1 or 2 player
-                single_player(player1, player2, switch_player, gameNo)
-            elif game_mode == 2:
-                two_player(player1, player2, switch_player, gameNo)
-        else:
-            exit()
-    else:
-        exit()
+    return (cur_game_num)
 
 
 # This is for two humans to play against each other
-def two_player(player1, player2, switch_player, gameNo):
+def two_player(player1, player2, switch_player, cur_game_num):
     setup()
     game_mode = 2
     players = {}
@@ -150,12 +106,12 @@ def two_player(player1, player2, switch_player, gameNo):
     count = 0
 
     while count < 9:
-        printBoard(theBoard)
+        print_board(the_board)
         print("It is " + cur_player + "'s go, you are " + players[cur_player] +
               ". Where do you want to go?")
         move = input()
-        if theBoard[move] == ' ':
-            theBoard[move] = players[cur_player]  # Adds move to board if legal
+        if the_board[move] == ' ':
+            the_board[move] = players[cur_player]  # Add move to board if legal
             count += 1
         else:
             print("Already taken")
@@ -163,24 +119,30 @@ def two_player(player1, player2, switch_player, gameNo):
         # Checks each solution against the board after a turn has been
         # taken to see if it is a winning move
         for sol in solutions:
-            if (theBoard[str(sol[0])] == theBoard[str(sol[1])] ==
-                    theBoard[str(sol[2])] == players[cur_player]):
-                printBoard(theBoard)
-                winner(cur_player, player1, player2, game_mode,
-                       switch_player, gameNo)
+            if (the_board[str(sol[0])] == the_board[str(sol[1])] ==
+                    the_board[str(sol[2])] == players[cur_player]):
+                print_board(the_board)
+                winner = True
+                cur_game_num = game_over(cur_player, player1, player2,
+                                         game_mode, switch_player,
+                                         cur_game_num, winner)
+                return cur_game_num
         if cur_player == player1:  # Flips who the current player is
             cur_player = player2
         else:
             cur_player = player1
-    tie_game(cur_player, player1, player2, game_mode, switch_player, gameNo)
+    winner = False
+    cur_game_num = game_over(cur_player, player1, player2, game_mode,
+                             switch_player, cur_game_num, winner)
+    return cur_game_num
 
 
-def single_player(player1, player2, switch_player, gameNo):
+def single_player(player1, player2, switch_player, cur_game_num):
     setup()
     game_mode = 1
     # Creates a copy of the board for the computer to pick from,
     # deletes the places that the user and computer have used
-    compBoard = theBoard.copy()
+    comp_board = the_board.copy()
     players = {}
     switch_player = switch_player
     if switch_player:
@@ -194,7 +156,7 @@ def single_player(player1, player2, switch_player, gameNo):
     count = 0
 
     while count < 9:
-        printBoard(theBoard)
+        print_board(the_board)
 
         if cur_player == player2:
             print("It is " + cur_player + "'s go, they are " +
@@ -204,41 +166,47 @@ def single_player(player1, player2, switch_player, gameNo):
             print("Computer is thinking..",  end="\r")
             print("Computer is thinking...")
             # Get a random selection where the computer can place
-            square, value = random.choice(list(compBoard.items()))
-            theBoard[square] = players[cur_player]
-            del compBoard[square]
+            square, value = random.choice(list(comp_board.items()))
+            the_board[square] = players[cur_player]
+            del comp_board[square]
             count += 1
         else:
             print("It is " + cur_player + "'s go, you are " +
                   players[cur_player] + ". Where do you want to go?")
             move = input()
-            if theBoard[move] == ' ':
-                theBoard[move] = players[cur_player]
+            if the_board[move] == ' ':
+                the_board[move] = players[cur_player]
                 count += 1
-                del compBoard[move]
+                del comp_board[move]
             else:
                 print("Already taken")
                 continue
         for sol in solutions:
-            if (theBoard[str(sol[0])] == theBoard[str(sol[1])] ==
-                    theBoard[str(sol[2])] == players[cur_player]):
-                winner(cur_player, player1, player2, game_mode,
-                       switch_player, gameNo)
+            if (the_board[str(sol[0])] == the_board[str(sol[1])] ==
+                    the_board[str(sol[2])] == players[cur_player]):
+                winner = True
+                cur_game_num = game_over(cur_player, player1, player2,
+                                         game_mode, switch_player,
+                                         cur_game_num, winner)
+                return cur_game_num
         if cur_player == player1:
             cur_player = player2
         else:
             cur_player = player1
-    tie_game(cur_player, player1, player2, game_mode, switch_player, gameNo)
+    winner = False
+    cur_game_num = game_over(cur_player, player1, player2, game_mode,
+                             switch_player, cur_game_num, winner)
+    return cur_game_num
 
 
-def AI_players(player1, player2, switch_player, gameNo):
-    gameNo = gameNo
+def AI_players(player1, player2, switch_player, cur_game_num):
+    cur_game_num = cur_game_num
     setup()
     square = 0
     game_mode = 0
     # Creates a copy of the board for the computer to pick from,
     # deletes the places that the user and computer have used
-    compBoard = theBoard.copy()
+    comp_board = the_board.copy()
     players = {}
     switch_player = switch_player
     if switch_player:
@@ -263,19 +231,19 @@ def AI_players(player1, player2, switch_player, gameNo):
             # Iterates through the highest weighted positions,
             # picking the first that is free on the board
             for pos in AI1_placement_weighting_sorted:
-                if theBoard[pos[0]] == ' ':
+                if the_board[pos[0]] == ' ':
                     square = pos[0]
                     break
             AI1_placement_temp[str(count)] = square
         elif cur_player == player2:
-            square, value = random.choice(list(compBoard.items()))
-        theBoard[square] = players[cur_player]
-        del compBoard[square]
+            square, value = random.choice(list(comp_board.items()))
+        the_board[square] = players[cur_player]
+        del comp_board[square]
         count += 1
 
         for sol in solutions:
-            if (theBoard[str(sol[0])] == theBoard[str(sol[1])] ==
-                    theBoard[str(sol[2])] == players[cur_player]):
+            if (the_board[str(sol[0])] == the_board[str(sol[1])] ==
+                    the_board[str(sol[2])] == players[cur_player]):
                 # If player1 won, +3 to each of the moves played in this game
                 # If player1 lost, -1 to each of the moves played in this game
                 if cur_player == player1:
@@ -286,8 +254,11 @@ def AI_players(player1, player2, switch_player, gameNo):
                     for key in AI1_placement_temp:
                         if AI1_placement_temp[key] != '':
                             AI1_full_weighting[key][AI1_placement_temp[key]] -= 1
-                winner(cur_player, player1, player2, game_mode,
-                       switch_player, gameNo)
+                winner = True
+                cur_game_num = game_over(cur_player, player1, player2,
+                                         game_mode, switch_player,
+                                         cur_game_num, winner)
+                return cur_game_num
         # Switch player turn
         if cur_player == player1:
             cur_player = player2
@@ -297,29 +268,31 @@ def AI_players(player1, player2, switch_player, gameNo):
     for key in AI1_placement_temp:
         if AI1_placement_temp[key] != '':
             AI1_full_weighting[key][AI1_placement_temp[key]] += 1
-    tie_game(cur_player, player1, player2, game_mode, switch_player, gameNo)
+    winner = False
+    cur_game_num = game_over(cur_player, player1, player2, game_mode,
+                             switch_player, cur_game_num, winner)
+    return cur_game_num
 
 
 def main():
     switch_player = False
+    cur_game_num = 0
     print("AI Game [0], Single player [1] or two player [2]?")
     game_selection = input()
     if game_selection == "0":
         player1 = "Computer1"
         player2 = "Computer2"
-        gameNo = 0
         scoreboard[player1] = 0
         scoreboard[player2] = 0
-        AI_players(player1, player2, switch_player, gameNo)
+        AI_players(player1, player2, switch_player, cur_game_num)
     elif game_selection == "1":
         print("Player 1")
         player1 = input("Enter the name : ")
         print("\n")
         player2 = "Computer"
-        gameNo = 0
         scoreboard[player1] = 0
         scoreboard[player2] = 0
-        single_player(player1, player2, switch_player, gameNo)
+        single_player(player1, player2, switch_player, cur_game_num)
     elif game_selection == "2":
         print("Player 1")
         player1 = input("Enter the name : ")
@@ -327,11 +300,19 @@ def main():
         print("Player 2")
         player2 = input("Enter the name : ")
         print("\n")
-        gameNo = 0
         scoreboard[player1] = 0
         scoreboard[player2] = 0
-        two_player(player1, player2, switch_player, gameNo)
-    print("MAIN OVER")
+        two_player(player1, player2, switch_player, cur_game_num)
+    while game_selection == '0' and cur_game_num < num_games:
+        cur_game_num = AI_players(player1, player2, switch_player,
+                                  cur_game_num)
+    print("Game over!")
+    print("Current score:")
+    for k, v in scoreboard.items():
+        print(k, ':', v)
+    print("--------------------------------------------------------------")
+    print(AI1_full_weighting)
+    print("-----------------------------------")
 
 
 if __name__ == '__main__':
