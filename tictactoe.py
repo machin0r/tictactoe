@@ -97,7 +97,6 @@ def winner(cur_player, player1, player2, game_mode, switch_player, gameNo):
         else:
             exit()
     else:
-        print(AI1_full_weighting)
         exit()
 
 
@@ -111,7 +110,6 @@ def tie_game(cur_player, player1, player2, game_mode, switch_player, gameNo):
         AI_players(player1, player2, switch_player, gameNo)
     elif game_mode == 0:
         print("Game Over!")
-        scoreboard[cur_player] += 1
         print("Current score:")
         for k, v in scoreboard.items():
             print(k, ':', v)
@@ -132,7 +130,6 @@ def tie_game(cur_player, player1, player2, game_mode, switch_player, gameNo):
         else:
             exit()
     else:
-        print(AI1_full_weighting)
         exit()
 
 
