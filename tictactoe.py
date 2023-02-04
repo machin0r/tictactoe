@@ -1,6 +1,7 @@
 import random
 
-num_games = 10000
+num_games = 3000
+training_games = 1000
 cur_game_num = 0
 
 the_board = {'1': ' ', '2': ' ', '3': ' ',
@@ -86,7 +87,7 @@ def game_over(cur_player, player1, player2, game_mode,
                 two_player(player1, player2, switch_player, cur_game_num)
         else:
             exit()
-    return (cur_game_num)
+    return cur_game_num, switch_player
 
 
 # This is for two humans to play against each other
@@ -126,7 +127,7 @@ def two_player(player1, player2, switch_player, cur_game_num):
                 cur_game_num = game_over(cur_player, player1, player2,
                                          game_mode, switch_player,
                                          cur_game_num, winner)
-                return cur_game_num
+                return cur_game_num, switch_player
         if cur_player == player1:  # Flips who the current player is
             cur_player = player2
         else:
@@ -134,7 +135,7 @@ def two_player(player1, player2, switch_player, cur_game_num):
     winner = False
     cur_game_num = game_over(cur_player, player1, player2, game_mode,
                              switch_player, cur_game_num, winner)
-    return cur_game_num
+    return cur_game_num, switch_player
 
 
 def single_player(player1, player2, switch_player, cur_game_num):
@@ -188,7 +189,7 @@ def single_player(player1, player2, switch_player, cur_game_num):
                 cur_game_num = game_over(cur_player, player1, player2,
                                          game_mode, switch_player,
                                          cur_game_num, winner)
-                return cur_game_num
+                return cur_game_num, switch_player
         if cur_player == player1:
             cur_player = player2
         else:
@@ -196,7 +197,7 @@ def single_player(player1, player2, switch_player, cur_game_num):
     winner = False
     cur_game_num = game_over(cur_player, player1, player2, game_mode,
                              switch_player, cur_game_num, winner)
-    return cur_game_num
+    return cur_game_num, switch_player
 
 
 def AI_players(player1, player2, switch_player, cur_game_num):
@@ -225,16 +226,20 @@ def AI_players(player1, player2, switch_player, cur_game_num):
         # and picks the highest weighted option.
         # player2 is picked randomly
         if cur_player == player1:
-            AI1_test = AI1_full_weighting[str(count)]
-            AI1_placement_weighting_sorted = sorted(AI1_test.items(),
-                                                    key=lambda x: -x[1])
-            # Iterates through the highest weighted positions,
-            # picking the first that is free on the board
-            for pos in AI1_placement_weighting_sorted:
-                if the_board[pos[0]] == ' ':
-                    square = pos[0]
-                    break
-            AI1_placement_temp[str(count)] = square
+            if cur_game_num < training_games:
+                square, value = random.choice(list(comp_board.items()))
+                AI1_placement_temp[str(count)] = square
+            elif cur_game_num >= training_games:
+                AI1_test = AI1_full_weighting[str(count)]
+                AI1_placement_weighting_sorted = sorted(AI1_test.items(),
+                                                        key=lambda x: -x[1])
+                # Iterates through the highest weighted positions,
+                # picking the first that is free on the board
+                for pos in AI1_placement_weighting_sorted:
+                    if the_board[pos[0]] == ' ':
+                        square = pos[0]
+                        break
+                AI1_placement_temp[str(count)] = square
         elif cur_player == player2:
             square, value = random.choice(list(comp_board.items()))
         the_board[square] = players[cur_player]
@@ -255,10 +260,12 @@ def AI_players(player1, player2, switch_player, cur_game_num):
                         if AI1_placement_temp[key] != '':
                             AI1_full_weighting[key][AI1_placement_temp[key]] -= 1
                 winner = True
-                cur_game_num = game_over(cur_player, player1, player2,
-                                         game_mode, switch_player,
-                                         cur_game_num, winner)
-                return cur_game_num
+                cur_game_num, switch_player = game_over(cur_player, player1,
+                                                        player2, game_mode,
+                                                        switch_player,
+                                                        cur_game_num,
+                                                        winner)
+                return cur_game_num, switch_player
         # Switch player turn
         if cur_player == player1:
             cur_player = player2
@@ -269,9 +276,10 @@ def AI_players(player1, player2, switch_player, cur_game_num):
         if AI1_placement_temp[key] != '':
             AI1_full_weighting[key][AI1_placement_temp[key]] += 1
     winner = False
-    cur_game_num = game_over(cur_player, player1, player2, game_mode,
-                             switch_player, cur_game_num, winner)
-    return cur_game_num
+    cur_game_num, switch_player = game_over(cur_player, player1, player2,
+                                            game_mode, switch_player,
+                                            cur_game_num, winner)
+    return cur_game_num, switch_player
 
 
 def main():
@@ -304,8 +312,8 @@ def main():
         scoreboard[player2] = 0
         two_player(player1, player2, switch_player, cur_game_num)
     while game_selection == '0' and cur_game_num < num_games:
-        cur_game_num = AI_players(player1, player2, switch_player,
-                                  cur_game_num)
+        cur_game_num, switch_player = AI_players(player1, player2,
+                                                 switch_player, cur_game_num)
     print("Game over!")
     print("Current score:")
     for k, v in scoreboard.items():
